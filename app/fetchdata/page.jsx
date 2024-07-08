@@ -41,14 +41,28 @@ const Contact = () => {
   const { data: countries, loading: loadingCountries } = useFetchData(
     "http://202.157.176.100:3000/negaras"
   );
-  console.log("Countries:", countries);
   const [selectedCountry, setSelectedCountry] = useState();
   const [ports, setPorts] = useState([]);
   const [loadingPorts, setLoadingPorts] = useState(false);
   const [selectedPort, setSelectedPort] = useState(null);
   const [goods, setGoods] = useState([]);
   const [loadingGoods, setLoadingGoods] = useState(false);
+  const [selectedGoods, setSelectedGoods] = useState(null);
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    })
+      .format(value)
+      .replace("IDR", "")
+      .trim();
+  };
+  const calculateDiscountedPrice = (price, discount) => {
+    if (!price || !discount) return price;
+    return price - price * (discount / 100);
+  };
   useEffect(() => {
     const fetchPorts = async () => {
       if (selectedCountry) {
@@ -59,7 +73,6 @@ const Contact = () => {
         const data = await response.json();
         setPorts(data);
         setLoadingPorts(false);
-        console.log("Ports:", selectedCountry);
       } else {
         setPorts([]);
       }
@@ -78,7 +91,6 @@ const Contact = () => {
         const data = await response.json();
         setGoods(data);
         setLoadingGoods(false);
-        console.log("Ports:", selectedPort);
       } else {
         setGoods([]);
       }
@@ -86,6 +98,12 @@ const Contact = () => {
 
     fetchGoods();
   }, [selectedPort]);
+
+  useEffect(() => {
+    setSelectedPort(null);
+    setGoods([]);
+    setSelectedGoods(null);
+  }, [selectedCountry]);
 
   return (
     <section className="py-6">
@@ -95,16 +113,9 @@ const Contact = () => {
             <form className="flex flex-col gap-6 p-10 bg-[#27272c] rounded-xl">
               <h3 className="text-4xl text-accent">Let&apos;s Work Together</h3>
               <p className="text-white/60">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam
-                ea sed maiores a animi eius, quos, in architecto non
-                voluptatibus rerum reprehenderit!
+                Create a form validation script that provides real-time feedback using NEXTJS
+                to users.
               </p>
-              <div className="grid grid-cols-1 gap-6">
-                <Input placeholder="First Name" type="text" />
-                <Input placeholder="Last Name" type="text" />
-                <Input placeholder="Email" type="email" />
-                <Input placeholder="Phone" type="tel" />
-              </div>
               <Select onValueChange={(value) => setSelectedCountry(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Negara" />
@@ -125,8 +136,9 @@ const Contact = () => {
                 </SelectContent>
               </Select>
               <Select
-                onValueChange={setSelectedPort}
+                onValueChange={(value) => setSelectedPort(value)}
                 disabled={!selectedCountry}
+                value={selectedPort || ""}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Pelabuhan" />
@@ -146,7 +158,11 @@ const Contact = () => {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-              <Select disabled={!selectedPort}>
+              <Select
+                onValueChange={(value) => setSelectedGoods(value)}
+                disabled={!selectedPort}
+                value={selectedGoods || ""}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Barang" />
                 </SelectTrigger>
@@ -165,10 +181,68 @@ const Contact = () => {
               <Textarea
                 className="h-[200px]"
                 placeholder="Tulis Pesan Disini"
+                value={
+                  selectedGoods
+                    ? goods.find(
+                        (good) => good.id_barang === parseInt(selectedGoods)
+                      )?.description
+                    : ""
+                }
+                readOnly
               />
-              <Button size="md" className="max-w-40">
-                Send Message
-              </Button>
+              <div className="flex items-center w-1/4">
+                <Input
+                  placeholder="Harga Diskon"
+                  value={
+                    selectedGoods
+                      ? goods.find(
+                          (good) => good.id_barang === parseInt(selectedGoods)
+                        )?.diskon
+                      : ""
+                  }
+                  className="flex-grow"
+                />
+                <span className="ml-2">%</span>
+              </div>
+              <div className="flex items-center w-1/4 relative">
+                {/* <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span> */}
+                <Input
+                  placeholder="Harga Barang"
+                  value={
+                    selectedGoods
+                      ? formatCurrency(
+                          goods.find(
+                            (good) => good.id_barang === parseInt(selectedGoods)
+                          )?.harga
+                        )
+                      : ""
+                  }
+                  className="flex-grow" // Sesuaikan padding untuk memberi ruang pada "Rp"
+                />
+              </div>
+
+              <div className="flex items-center w-1/4 relative">
+                <Input
+                  placeholder="Harga Barang"
+                  value={
+                    selectedGoods
+                      ? formatCurrency(
+                          calculateDiscountedPrice(
+                            goods.find(
+                              (good) =>
+                                good.id_barang === parseInt(selectedGoods)
+                            )?.harga,
+                            goods.find(
+                              (good) =>
+                                good.id_barang === parseInt(selectedGoods)
+                            )?.diskon
+                          )
+                        )
+                      : ""
+                  }
+                  className="flex-grow" // Sesuaikan padding untuk memberi ruang pada "Rp"
+                />
+              </div>
             </form>
           </div>
           <div className="flex-1 flex items-center xl:justify-end order-1 xl:order-none mb-8 xl:mb-0">
