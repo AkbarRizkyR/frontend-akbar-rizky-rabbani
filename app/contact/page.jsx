@@ -116,7 +116,7 @@ const Contact = () => {
                       countries.map((country) => (
                         <SelectItem
                           key={country.id_negara}
-                          value={country.id_negara}
+                          value={String(country.id_negara)}
                         >
                           {country.nama_negara}
                         </SelectItem>
